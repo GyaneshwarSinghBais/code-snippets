@@ -1,0 +1,86 @@
+--------------housing.services.ts---------------
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs/operators';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HousingService {
+
+  constructor(private http:HttpClient) { }
+
+  //getAllProperties(){
+  getAllProperties(): Observable<Iproperty[]>{        //after Iproperty interface made
+    return this.http.get('data/properties.json').pipe(
+      map(data=>{
+        //const propertiesArray:Array<any> = [];
+	const propertiesArray:Array<Iproperty> = [];  //after Iproperty interface made
+        for(const id in data){
+          if(data.hasOwnProperty(id)) {
+            propertiesArray.push(data[id]);
+          }
+        }
+        return propertiesArray;
+      })
+    );
+  }
+}
+----------------------------------------------------
+Possibe Error: in data[i]
+No index signature with a parameter of type 'string' was found on type 'Object'.ts
+Solution:
+go to tsconfig.json and set  "strict" : false to fix
+----------------------------------------------------
+
+create interface parallel to where you want to use it..
+
+--------Iproperty.interface.ts--------------
+export interface Iproperty{
+  Id:number;
+  Name:string;
+  Type:string;
+  Price:number;
+}
+
+-------------property-list.component.ts-----------------
+...
+import { Iproperty } from '../Iproperty.interface';
+...
+export class PropertyListComponent implements OnInit {
+
+  // properties: Array<any> = [];
+  properties: Array<Iproperty>;
+...
+
+-----------------property-card.component.ts------------------
+import { Component, Input } from "@angular/core";
+import { Iproperty } from "../Iproperty.interface";
+
+@Component({
+  selector:'app-property-card',
+  // template:`<h1>I am a card</h1>`,
+  templateUrl:'property-card.component.html',
+  // styles:['h1 {font-weight:normal;}']
+  styleUrls:['property-card.component.css']
+}
+)
+export class PropertyCardComponent{
+
+@Input() property:Iproperty
+
+
+}
+
+
+-------Note: Property-card is a component where data passes from property-list component--
+by this code
+
+-----property-list.component.html------
+
+<div class="row">
+  <div *ngFor="let property of properties" class="shadow-lg col-sm-4 p-3">
+<app-property-card [property]="property"></app-property-card>
+  </div>
+</div>

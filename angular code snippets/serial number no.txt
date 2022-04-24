@@ -1,0 +1,2 @@
+<tr *ngFor="let rc of ratecontracts; let i=index">
+      <td>{{ i+1}}</td>

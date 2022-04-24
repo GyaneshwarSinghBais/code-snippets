@@ -1,0 +1,1 @@
+<img class="propImg" src="assets/images/house_default.png">

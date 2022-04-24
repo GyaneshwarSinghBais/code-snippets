@@ -1,0 +1,48 @@
+create data folder inside src folder and create json file example 'properties.json' inside data folder
+
+src>data>properties.json
+
+------------properties.json---------------------
+
+[
+    {
+      "Id":1,
+      "Name":"Birla House",
+      "Type":"House",
+      "Price":12000
+    },
+    {
+      "Id":2,
+      "Name":"Laxmi Villa",
+      "Type":"House",
+      "Price":15000
+    },
+    {
+      "Id":3,
+      "Name":"Avinash Bunglow",
+      "Type":"Bunglow",
+      "Price":35000
+    },
+    {
+      "Id":4,
+      "Name":"Falak Tower",
+      "Type":"Building",
+      "Price":18000
+    },
+    {
+      "Id":5,
+      "Name":"Nayatara House",
+      "Type":"House",
+      "Price":10000
+    },
+    {
+      "Id":1,
+      "Name":"Maruti Apartment",
+      "Type":"Apartment",
+      "Price":16000
+    }
+]
+
+----------add in angular.json-----------------
+any folder which is outsite of the app folder and we need to access it in our application folder we have to add assets array in angular.json file
+

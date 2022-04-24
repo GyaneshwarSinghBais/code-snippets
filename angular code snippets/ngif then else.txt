@@ -1,0 +1,11 @@
+<ng-template [ngIf]="tenders.isfinalized == 'Y'" [ngIfElse]="loggedOut">
+    <div>
+      Yes
+    </div>
+  </ng-template>
+
+  <ng-template #loggedOut>
+    <div>
+      NO
+    </div>
+  </ng-template>

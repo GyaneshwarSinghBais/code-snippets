@@ -1,0 +1,26 @@
+http://localhost:4200/property-detail/3 
+is valid
+
+but if you give this path to url which is not defined console screen will show error
+http://localhost:4200/property-detail/3/gd
+
+to avoid this
+
+-----------app.module.ts-------------
+...
+const appRoutes:Routes = [
+ ...
+...
+  {path: '**', component:PageNotFound} 
+]
+
+
+
+-----------or you can give any default component if ulr is wrong-------
+-----------app.module.ts-------------
+...
+const appRoutes:Routes = [
+ ...
+...
+  {path: '**', component:PropertyListComponent} 
+]

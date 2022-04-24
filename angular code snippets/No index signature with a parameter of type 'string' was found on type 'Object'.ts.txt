@@ -1,0 +1,1 @@
+go to tsconfig.json and set  "strict" : false to fix

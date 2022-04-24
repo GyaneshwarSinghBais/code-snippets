@@ -1,0 +1,54 @@
+create folder 'services' inside app folder for sepration.. you can crate services anywhere you want...
+
+cd src/app/services
+
+PS D:\HSPA\frontend\src\app\services> ng g service housing
+
+-------------housing.service.ts--------------
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HousingService {
+
+  constructor(private http:HttpClient) { }
+
+  getAllProperties(){
+    return this.http.get('data/properties.json')
+  }
+}
+
+
+--------------app.module.ts------------------------
+
+import { HousingService } from './services/housing.service';
+...
+...
+  providers: [HousingService],
+
+------note: if you write in provider it will automatically import 
+
+---------------------property-list.component.ts--------(Use service)---------
+import { Component, OnInit } from '@angular/core';
+import { HousingService } from 'src/app/services/housing.service';
+...
+...
+properties: any;   //not recommended to take type any
+...
+  constructor(private housingService: HousingService) { }
+...
+
+ngOnInit(): void {
+    this.housingService.getAllProperties().subscribe(
+      data=>{
+        this.properties=data;
+        console.log(data);
+      },error=>{
+        console.log(error);
+      }
+    )
+
+  }

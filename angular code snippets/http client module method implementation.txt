@@ -1,0 +1,15 @@
+------------------app.module.ts----------------
+import {HttpClientModule} from '@angular/common/http';
+...
+...
+imports: [
+    BrowserModule,
+    AppRoutingModule,
+    HttpClientModule
+  ],
+
+
+--------------property-list.component.ts--------------
+import { HttpClient } from '@angular/common/http';
+...
+ constructor(private http:HttpClient) { }

@@ -1,0 +1,58 @@
+import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { InspectionApiService } from 'src/app/inspection-api.service';
+
+@Component({
+  selector: 'app-show-inspection',
+  templateUrl: './show-inspection.component.html',
+  styleUrls: ['./show-inspection.component.css']
+})
+export class ShowInspectionComponent implements OnInit {
+
+  inspectionList$!:Observable<any[]>;
+  inspectionTypesList$!:Observable<any[]>;
+  inspectionTypesList:any=[];
+
+  //Map to display data associated with foreign key
+    inspectionTypeMap:Map<number,string> = new Map()
+
+  constructor(private services:InspectionApiService) { }
+
+  ngOnInit(): void {
+    this.inspectionList$ = this.services.getInspectionList();
+    this.inspectionTypesList$ = this.services.getInspectionTypesList();
+    this.RefreshInspectionTypeMap();
+  }
+
+  RefreshInspectionTypeMap(){
+    this.services.getInspectionTypesList().subscribe(data => {
+      this.inspectionTypesList = data;
+
+      for(let i=0; i < data.length; i++)
+      {
+        this.inspectionTypeMap.set(this.inspectionTypesList[i].id, this.inspectionTypesList[i].inspectionName);
+      }
+    })
+  }
+
+}
+
+--------------------------------------
+
+<table class="table table-stripped">
+    <thead>
+        <th>Id</th>
+        <th>Inspection Type</th>
+        <th>Status</th>
+        <th>Comments</th>
+    </thead>
+    <tbody>
+        <tr *ngFor="let item of inspectionList$|async">
+            <td>{{item.id}}</td>
+            <td>{{inspectionTypeMap.get(item.inspectionTypeId)}}</td>
+            <!-- <td>{{item.inspectionTypeId}}</td> -->
+            <td>{{item.status}}</td>
+            <td>{{item.comments}}</td>
+        </tr>
+    </tbody>
+</table>

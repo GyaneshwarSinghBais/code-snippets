@@ -1,0 +1,6 @@
+1. angular essentials
+2. auto rename tag
+3. Bracket Pair Colorizer 2
+4. Angular Files
+5. IntelliSense for CSS class names in HTML
+

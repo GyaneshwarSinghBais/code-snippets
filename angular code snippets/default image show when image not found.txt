@@ -1,0 +1,5 @@
+
+-------------property-card.component.html---------------
+
+<img *ngIf="property.Image" class="card-img-top" src="assets/images/{{property.Image}}.png" />
+    <img *ngIf="!property.Image" class="card-img-top" src="assets/images/house_default.png" />

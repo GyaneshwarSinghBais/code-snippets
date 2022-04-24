@@ -1,0 +1,1 @@
+<input type="date" [ngModel]="todaysDate | date:'dd-MM-yyyy'" (ngModelChange)="todaysDate = $event" [value]="todaysDate | date:'yyyy-MM-dd'">

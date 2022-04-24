@@ -1,0 +1,12 @@
+npm intall bootstrap --save
+
+------Watch package.jason in dependencies it should be already here like this-----------
+"bootstrap": "^5.1.3",
+
+------angular.json--------------
+--------put this url "node_modules/bootstrap/dist/css/bootstrap.min.css" in styles--------------
+
+ "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "src/styles.css"
+            ],

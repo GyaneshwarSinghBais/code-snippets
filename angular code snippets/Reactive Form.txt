@@ -1,0 +1,157 @@
+
+---------------------------------add-contractor.component.ts----------------
+
+import { Component, OnInit } from '@angular/core';
+import {FormGroup,FormControl,FormBuilder,Validators, FormArray} from '@angular/forms';
+import { TransportService } from 'src/app/services/transport.service';
+
+@Component({
+  selector: 'app-add-contractor',
+  templateUrl: './add-contractor.component.html',
+  styleUrls: ['./add-contractor.component.css']
+})
+export class AddContractorComponent implements OnInit {
+
+  public form!: FormGroup;
+  warehouses = null;
+  constructor( private transApi:TransportService,private fb:FormBuilder) { }
+
+  ngOnInit(): void {
+    this.addContractorForm();
+
+    this.transApi.getAllWarehouses().subscribe((data)=>{
+      this.warehouses = data;
+    });
+
+    // console.log(this.warehouses);
+
+
+  }
+
+  addContractorForm() {
+    this.form = this.fb.group({
+      contractorname: ['', [Validators.required,Validators.minLength(2)]],
+      isCentralContractor: ['',[Validators.required]],
+      whid: ['',[Validators.required]]
+    });
+  }
+
+  get f(){
+    return this.form.controls;
+  }
+
+  get contractorname() {
+    return this.form.get('contractorname');
+  }
+  get isCentralContractor() {
+    return this.form.get('isCentralContractor');
+  }
+  get whid() {
+    return  this.form.get('whid');
+  }
+
+
+
+  onClickSubmit() {
+    //console.log(this.form.value);
+    //this.transApi.create(this.form.value);
+
+    this.transApi.create(this.form.value)
+    .subscribe({
+      next: (res) => {
+        //console.log(res);
+      },
+      error: (e) => console.error(e)
+    });
+  }
+
+  changeRadioIsCentral(e:any) {
+    console.log(e.target.value);
+    if(e.target.value == 'Y'){
+      //this.isCentralCont = false;
+      //this.form.get('whid')?.disabled;
+      console.log(this.form.getRawValue);
+    }else{
+      //this.isCentralCont = true;
+      this.form.get('whid')?.disabled;
+    }
+  }
+
+}
+
+---------------------------------add-contractor.component.html----------------
+
+<app-navbar-admin></app-navbar-admin>
+
+<div class="container">
+  <div class="row justify-content-center">
+<div class="card border-primary mb-3 mt-3" style="max-width: 40%;">
+  <div class="card-header"><h3>Add Contractor</h3></div>
+  <div class="card-body">
+    <form [formGroup] = "form" (ngSubmit)="onClickSubmit()" novalidate>
+      <div class="mb-3">
+      <label for="contractorname" class="form-label fw-bold">Contractor :</label>
+      <input type = "text"
+        name = "contractorname"
+        placeholder = "contractorname"
+        formControlName = "contractorname" class="form-control">
+        <div *ngIf="f['contractorname'].touched && f['contractorname'].invalid" class="alert alert-danger">
+          <div *ngIf="f['contractorname'].errors && f['contractorname'].errors['required']" class="small">contractorname is required.</div>
+          <div *ngIf="f['contractorname'].errors && f['contractorname'].errors['minlength']" class="small">contractorname should be 3 character.</div>
+        </div>
+      </div>
+      <br/>
+      <!-- <input type = "text"
+        name = "isCentralContractor"
+        placeholder = "isCentralContractor"
+        formControlName = "isCentralContractor">
+      <br/> -->
+
+
+      <div class="mb-3">
+        <label for="isCentralContractor" class="form-label fw-bold">Is Contractor Central :</label>
+      <div class="form-check">
+        <input id="Yes" type="radio" value="Y" name="isCentralContractor" formControlName="isCentralContractor"
+        class="form-check-input" (change)="changeRadioIsCentral($event)" >
+        <label for="Yes">Yes</label>
+     </div>
+     <div class="form-check">
+        <input id="No" type="radio" value="N" name="isCentralContractor" formControlName="isCentralContractor"
+        class="form-check-input" (change)="changeRadioIsCentral($event)"  checked>
+        <label for="Yes">No</label>
+     </div>
+     <div *ngIf="f['isCentralContractor'].touched && f['isCentralContractor'].invalid" class="alert alert-danger">
+      <div *ngIf="f['isCentralContractor'].errors && f['isCentralContractor'].errors['required']" class="small">isCentralContractor is required.</div>
+    </div>
+    </div>
+      <!-- <input type = "number"
+        name = "whid"
+        placeholder = "whid"
+        formControlName = "whid"> -->
+
+
+         <label for="warehouse" class="form-label fw-bold">Warehouse:</label>
+         <select formControlName="whid" class="form-control" name="whid" >
+             <option disabled>-Select Warehouse-</option>
+             <option value="0">No Warehouse</option>
+             <option *ngFor="let wh of warehouses" [value]="wh.warehouseid">{{wh.warehousename}}</option>
+         </select>
+            <!-- error block -->
+            <div *ngIf="f['whid'].touched && f['whid'].invalid" class="alert alert-danger">
+              <div *ngIf="f['whid'].errors && f['whid'].errors['required']" class="small">Warehouse is Required.</div>
+            </div>
+
+      <br/>
+      <input type = "submit" value = "submit" class="btn btn-primary">
+    </form>
+  </div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+

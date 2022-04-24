@@ -1,0 +1,14 @@
+PS D:\HSPA\frontend\src\app\property> ng g c add-property
+
+------app.module.ts-----------
+
+import { AddPropertyComponent } from './property/add-property/add-property.component';
+...
+...
+ declarations: [
+    	...,
+	...,
+	...,
+	...,
+      AddPropertyComponent
+   ],

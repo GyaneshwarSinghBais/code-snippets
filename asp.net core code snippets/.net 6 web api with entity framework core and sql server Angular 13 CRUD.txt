@@ -1,0 +1,494 @@
+.net core web api 
+----------------------
+
+add class
+-------------
+
+
+InspectionType.cs
+----------
+using System.ComponentModel.DataAnnotations;
+
+namespace inspectionAPI
+{
+    public class InspectionType
+    {
+        public int Id { get; set; }
+
+        [StringLength(20)]
+        public string InspectionName { get; set; } = string.Empty;
+    }
+}
+
+
+Inspection.cs
+---------------
+using System.ComponentModel.DataAnnotations;
+
+namespace inspectionAPI
+{
+    public class Inspection
+    {
+        public int Id { get; set; }
+
+        [StringLength(20)]
+        public string Status { get; set; } = String.Empty;
+
+        [StringLength(200)]
+        public string Comments { get; set; } = String.Empty;
+        public int InspectionTypeId { get; set; }
+        public InspectionType? InspectionType { get; set; }
+    }
+}
+
+
+Status.cs
+-------------
+namespace inspectionAPI
+{
+    public class Status
+    {
+        public int Id { get; set; }
+
+        public string StatusOption { get; set; } = String.Empty; 
+    }
+}
+
+
+Folder "Data" -> DataContext.cs
+-------------------------------
+using Microsoft.EntityFrameworkCore;
+
+namespace inspectionAPI.Data
+{
+    public class DataContext:DbContext
+    {
+    }
+}
+
+intall nugetpackage
+---------------
+Microsoft.EntityFrameworkCore
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.EntityFrameworkCore.Tools
+Microsoft.EntityFrameworkCore.Design
+Microsoft.VisualStudio.Web.CodeGeneration.Design
+Microsoft.AspNet.WebApi.Cors
+
+Folder "Data" -> DataContext.cs
+-------------------------------
+using Microsoft.EntityFrameworkCore;
+
+namespace inspectionAPI.Data
+{
+    public class DataContext:DbContext
+    {
+        public DataContext(DbContextOptions<DataContext> options) : base(options) { }
+
+        public DbSet<Inspection> Inspections { get; set; }
+
+        public DbSet<InspectionType> InspectionTypes { get; set; }
+
+        public DbSet<Status> Statuses { get; set; }
+    }
+}
+
+
+Program.cs
+-------------
+using inspectionAPI.Data;
+using Microsoft.EntityFrameworkCore;
+..............................
+..............................
+....after builder.Services.AddSwaggerGen();..................
+
+builder.Services.AddDbContext<DataContext>(options => 
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+
+appsetting.json
+--------------------
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=.;database=inspectionapidb;User ID=sa;Password=gyan@123;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
+
+----------to use CORS---------
+Program.cs
+-------------
+....using inspectionAPI.Data;
+....using Microsoft.EntityFrameworkCore;
+var myAllowSpecificOrigins = "_myAllowSpecificOrigins";
+.......
+....connectionString......
+
+//Enable CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name:myAllowSpecificOrigins,
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:4200")
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+        });
+});
+
+.........
+..........app.UseHttpsRedirection();.......
+
+app.UseCors(myAllowSpecificOrigins);
+
+
+
+
+------------now open Tools > NuGet Package Manager > Package Manager Console command--------------
+PM>cd inspectionAPIApp
+PM>dotnet ef migrations InitialCreate
+OR
+PM>Add-Migration
+Name: Add-Migration
+build start...
+
+***YOU can use PM>dotnet build ** to see the errors if any
+
+PM>dotnet ef migrations add InitialCreate
+PM>dotnet ef database update
+OR
+PM>update-database
+
+
+----------------Fill Appropriate Data Using Swagger---------------
+
+
+
+
+
+
+
+--------------Now Angular--------------------------
+--------------installing angular------------------
+1 install node.js 
+   node --version
+   npm --version
+2 npm install -g @angular/cli  
+  ng --version
+
+--------new angular porject-------
+ng new angular13-inspection-api
+
+=>put bootstrap cdn of css and js inside src=>index.html
+css cdn here ..
+</head>
+.....
+<app-root></app-root>
+js cdn here ...
+
+
+
+-------------component--------
+>ng g c inspection
+
+-----component inside component-----------
+>ng g c inspection/show-inspection
+>ng g c inspection/add-edit-inspection
+
+------create services--------
+>ng g service inspection-api
+
+
+------app.moudle.ts------------
+import {HttpClientModule} from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+.....
+.....
+import { InspectionApiService } from './inspection-api.service';
+.....
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    FormsModule,
+    ReactiveFormsModule
+  ],
+  providers: [InspectionApiService],
+.....
+
+
+-------inspection-api.service.ts-----------------
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class InspectionApiService {
+
+  readonly inspectionAPIUrl ="https://localhost:7068/api";
+
+  constructor(private http:HttpClient) { }
+
+  getInspectionList():Observable<any[]>{
+    return this.http.get<any>(this.inspectionAPIUrl + '/inspections');
+  }
+
+  addInspection(data:any){
+    return this.http.post(this.inspectionAPIUrl + '/inspections', data);
+  }
+
+  updateInspection(id:number|string,data:any){
+    return this.http.put(this.inspectionAPIUrl + `/inspections/${id}`,data);
+  }
+
+  deleteInspection(id:number|string){
+    return this.http.delete(this.inspectionAPIUrl + `/inspections/${id}`);
+  }
+}
+
+
+
+
+
+----------------Now we are gona do same thing for others in inspection-api.service.ts-------------------
+//Inspection Types---------------
+  getInspectionTypesList():Observable<any[]>{
+    return this.http.get<any>(this.inspectionAPIUrl + '/inspectionTypes');
+  }
+
+  addInspectionTypes(data:any){
+    return this.http.post(this.inspectionAPIUrl + '/inspectionTypes', data);
+  }
+
+  updateInspectionTypes(id:number|string,data:any){
+    return this.http.put(this.inspectionAPIUrl + `/inspectionTypes/${id}`,data);
+  }
+
+  deleteInspectionTypes(id:number|string){
+    return this.http.delete(this.inspectionAPIUrl + `/inspectionTypes/${id}`);
+  }
+
+  //Statuses------------------------
+  getStatusList():Observable<any[]>{
+    return this.http.get<any>(this.inspectionAPIUrl + '/status');
+  }
+
+  addStatus(data:any){
+    return this.http.post(this.inspectionAPIUrl + '/status', data);
+  }
+
+  updateStatus(id:number|string,data:any){
+    return this.http.put(this.inspectionAPIUrl + `/status/${id}`,data);
+  }
+
+  deleteStatus(id:number|string){
+    return this.http.delete(this.inspectionAPIUrl + `/status/${id}`);
+  }
+
+
+
+
+-------------------------show-Inspection.component.ts---------------------------------
+import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { InspectionApiService } from 'src/app/inspection-api.service';
+
+@Component({
+  selector: 'app-show-inspection',
+  templateUrl: './show-inspection.component.html',
+  styleUrls: ['./show-inspection.component.css']
+})
+export class ShowInspectionComponent implements OnInit {
+
+  inspectionList$!:Observable<any[]>;
+  inspectionTypesList$!:Observable<any[]>;
+  inspectionTypesList:any=[];
+
+  //Map to display data associated with foreign key
+    inspectionTypeMap:Map<number,string> = new Map()
+
+  constructor(private services:InspectionApiService) { }
+
+  ngOnInit(): void {
+    this.inspectionList$ = this.services.getInspectionList();
+    this.inspectionTypesList$ = this.services.getInspectionTypesList();
+    this.RefreshInspectionTypeMap();
+  }
+
+  //Variable (properties)
+  modelTitle:string = '';
+  activateAddEditInspectionComponent:boolean = false;
+  inspection:any;
+
+  modalAdd(){
+    this.inspection={
+      Id:0,
+      status:null,
+      commnets:null,
+      inspectionTypeId:null
+    }
+    this.modelTitle = "Add Inspection";
+    this.activateAddEditInspectionComponent = true;
+  }
+
+  RefreshInspectionTypeMap(){
+    this.services.getInspectionTypesList().subscribe(data => {
+      this.inspectionTypesList = data;
+
+      for(let i=0; i < data.length; i++)
+      {
+        this.inspectionTypeMap.set(this.inspectionTypesList[i].id, this.inspectionTypesList[i].inspectionName);
+      }
+    })
+  }
+
+}
+
+
+
+
+-------------------------show-Inspection.component.html---------------------------------
+    <!-- Add Inspection trigger modal -->
+  <button type="button" class="btn btn-primary float-end m-2" data-bs-toggle="modal" 
+  data-bs-target="#staticBackdrop" (click)="modalAdd()">
+    Add Inspection
+  </button>
+
+<!-- Show Inspection trigger modal -->
+<button type="button" class="btn btn-secondary float-end m-2" data-bs-toggle="modal" data-bs-target="#exampleModal">
+  Show Inspection Types
+</button>
+
+<table class="table table-stripped">
+    <thead>
+        <th>Id</th>
+        <th>Inspection Type</th>
+        <th>Status</th>
+        <th>Comments</th>
+    </thead>
+    <tbody>
+        <tr *ngFor="let item of inspectionList$|async">
+            <td>{{item.id}}</td>
+            <td>{{inspectionTypeMap.get(item.inspectionTypeId)}}</td>
+            <!-- <td>{{item.inspectionTypeId}}</td> -->
+            <td>{{item.status}}</td>
+            <td>{{item.comments}}</td>
+        </tr>
+    </tbody>
+</table>
+
+
+  
+  <!--Show Inspection Types Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Inspection Types</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p *ngFor="let type of inspectionTypesList$|async">{{type.id}} - {{type.inspectionName}}</p>
+        </div>
+    </div>
+  </div>
+  </div>
+
+
+
+<!-- Add New Inspection Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">{{modelTitle}}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <app-add-edit-inspection [inspection]="inspection" *ngIf="activateAddEditInspectionComponent"></app-add-edit-inspection>
+      </div>      
+    </div>
+  </div>
+</div>
+
+
+
+
+---------------------------app.component.html--------------------------------------------
+<div class="container">
+  <app-inspection></app-inspection> 
+</div>
+
+------------------------------inspection.component.html-----------------------------------
+<h1 class="text-center">Inspection App</h1>
+<br>
+<app-show-inspection></app-show-inspection>
+
+------------------------------------------------------------------
+
+>ng serve --open
+
+------------------add-edit-inspection.component.html------------------------------
+<form>
+    <div class="mb-3">
+        <label for="inspectionTypeId" class="form-label">Inspection Type</label>
+        <!-- <input type="text" class="form-control" name="inspectionTypeId" [(ngModel)]="inspectionTypeId" 
+        *ngIf="inspection.id!=0" disabled> -->
+        <select class="form-control" name="inspectionTypeId" id="inspectionTypeId" 
+        [(ngModel)]="inspectionTypeId" *ngIf="inspection.Id==0">
+            <option *ngFor="let type of inspectionTypesList$|async" [value]="type.id">
+                {{type.inspectionName}}</option>
+        </select>
+    </div>
+</form>
+
+
+------------------add-edit-inspection.component.ts------------------------------
+import { Component,Input, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { InspectionApiService } from 'src/app/inspection-api.service';
+
+@Component({
+  selector: 'app-add-edit-inspection',
+  templateUrl: './add-edit-inspection.component.html',
+  styleUrls: ['./add-edit-inspection.component.css']
+})
+export class AddEditInspectionComponent implements OnInit {
+
+  inspectionList$!: Observable<any[]>;
+  statusList$!: Observable<any[]>;
+  inspectionTypesList$!: Observable<any[]>;
+
+  constructor(private service:InspectionApiService) { }
+
+  @Input() inspection:any;
+  id: number = 0;
+  status: string = "";
+  comments: string = "";
+  inspectionTypeId!:number;
+
+  ngOnInit(): void {
+    this.id = this.inspection.id;
+    this.status = this.inspection.status;
+    this.comments = this.inspection.comments;
+    this.inspectionTypeId = this.inspectionTypeId;
+    this.statusList$ = this.service.getStatusList();
+    this.inspectionList$ = this.service.getInspectionList();
+    this.inspectionTypesList$ = this.service.getInspectionTypesList();
+  }
+
+}
+
+
+
