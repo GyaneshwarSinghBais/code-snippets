@@ -1,0 +1,81 @@
+create a new folder 'Extensions' in the project and create a new class inside that folder named 'ServiceExtensions'
+
+public static class ServiceExtensions 
+{
+
+}
+
+---------serviceExtensions.cs--------------
+
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace CompanyEmployees.Extensions
+{
+    public static class ServiceExtensions
+    {
+        public static void ConfigureCors(this IServiceCollection services) =>
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder =>
+              builder.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+            });
+
+        //public static void ConfigureCors(this IServiceCollection services) =>
+        //   services.AddCors(options =>
+        //   {
+        //       options.AddPolicy("CorsPolicy", builder =>
+        //      builder.WithOrigins("https://example.com")
+        //      .WithMethods("POST", "GET")
+        //      .WithHeaders("accept", "content-type"));
+        //   });
+
+	
+	 public static void ConfigureIISIntegration(this IServiceCollection services) =>
+          services.Configure<IISOptions>(options =>
+          {              
+          });
+    }
+}
+
+
+..................Startup.cs......................................
+
+...
+using Microsoft.AspNetCore.HttpOverrides;
+...
+...
+  public void ConfigureServices(IServiceCollection services)
+        {
+            services.ConfigureCors();
+            services.ConfigureIISIntegration();
+	    ...
+            ...
+        }
+
+...
+
+
+  public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseHsts();                             //add this
+            }
+
+  app.UseHttpsRedirection(); 
+  app.UseStaticFiles();                                      //add this
+  app.UseCors("CorsPolicy"); 				  //
+  app.UseForwardedHeaders(new ForwardedHeadersOptions     //
+{ 
+  ForwardedHeaders = ForwardedHeaders.All                //
+});                                                      //
