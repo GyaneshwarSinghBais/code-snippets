@@ -1,0 +1,63 @@
+--------------------radio button for insert page ----------------
+
+<div class="mb-3">
+        <label for="isCentralContractor" class="form-label fw-bold">Is Contractor Central :</label>
+      <div class="form-check">
+        <input id="Yes" type="radio" value="Y" name="isCentralContractor" formControlName="isCentralContractor"
+        class="form-check-input" (change)="changeRadioIsCentral($event)" >
+        <label for="Yes">Yes</label>
+     </div>
+     <div class="form-check">
+        <input id="No" type="radio" value="N" name="isCentralContractor" formControlName="isCentralContractor"
+        class="form-check-input" (change)="changeRadioIsCentral($event)"  checked>
+        <label for="Yes">No</label>
+     </div>
+     <div *ngIf="f['isCentralContractor'].touched && f['isCentralContractor'].invalid" class="alert alert-danger">
+      <div *ngIf="f['isCentralContractor'].errors && f['isCentralContractor'].errors['required']" class="small">isCentralContractor is required.</div>
+    </div>
+    </div>
+
+-------------------------------radio button for update page------------------
+
+ <div class="mb-3">
+          <label for="isfinalized" class="form-label fw-bold"
+            >Is Finalize :</label
+          >
+          <div class="form-check">
+            <input
+              id="Yes"
+              type="radio"
+              value="Y"
+              name="isfinalized"
+              formControlName="isfinalized"
+              class="form-check-input"
+              [(ngModel)]="tender.isfinalized"
+            />
+            <label for="Yes">Yes</label>
+          </div>
+          <div class="form-check">
+            <input
+              id="No"
+              type="radio"
+              value="N"
+              name="isfinalized"
+              formControlName="isfinalized"
+              class="form-check-input"
+              [(ngModel)]="tender.isfinalized"
+            />
+            <label for="Yes">No</label>
+          </div>
+          <div
+            *ngIf="f['isfinalized'].touched && f['isfinalized'].invalid"
+            class="alert alert-danger"
+          >
+            <div
+              *ngIf="
+                f['isfinalized'].errors && f['isfinalized'].errors['required']
+              "
+              class="small"
+            >
+              isCentralContractor is required.
+            </div>
+          </div>
+        </div>

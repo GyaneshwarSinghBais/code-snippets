@@ -1,0 +1,28 @@
+  <label for="warehouse" class="form-label fw-bold">Warehouse:</label>
+         <select formControlName="whid" class="form-control" name="whid" >
+             <option disabled>-Select Warehouse-</option>
+             <option value="0">No Warehouse</option>
+             <option *ngFor="let wh of warehouses" [value]="wh.warehouseid">{{wh.warehousename}}</option>
+         </select>
+            <!-- error block -->
+            <div *ngIf="f['whid'].touched && f['whid'].invalid" class="alert alert-danger">
+              <div *ngIf="f['whid'].errors && f['whid'].errors['required']" class="small">Warehouse is Required.</div>
+            </div>
+
+
+
+------------------------------------------------
+
+...............
+.............
+warehouses = null;
+  constructor(
+    private transApi:TransportService,
+..............
+..............
+ngOnInit(): void {
+    this.addContractorForm();
+
+    this.transApi.getAllWarehouses().subscribe((data)=>{
+      this.warehouses = data;
+    });

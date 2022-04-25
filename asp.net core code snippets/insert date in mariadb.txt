@@ -1,0 +1,2 @@
+insert INTO mastender( tendername, startdate, enddate, isfinalized)
+VALUES ( 'ten/20/xyz', STR_TO_DATE('30-12-2019', '%d-%m-%Y'), STR_TO_DATE('30-12-2020', '%d-%m-%Y'), 'N')

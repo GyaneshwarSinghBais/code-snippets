@@ -1,0 +1,2 @@
+ <div *ngIf="tender.isfinalized==='Y'; else noTender">Yes</div>
+        <ng-template #noTender> No </ng-template>

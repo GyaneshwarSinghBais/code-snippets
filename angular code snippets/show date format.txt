@@ -1,0 +1,2 @@
+<td>{{ tender.startdate|date:'dd-M-yyyy'}}</td>
+      <td>{{ tender.enddate|date:'dd-M-yyyy' }}</td>
