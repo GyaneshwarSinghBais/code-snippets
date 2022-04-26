@@ -1,0 +1,370 @@
+-----------------DataModel/MasRCModels.cs---------------
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace TMIS_API.DataModel
+{
+    public class mastender
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int tenderid { get; set; }
+
+        [Required]
+        [Display(Name = "tendername")]
+        public string tendername { get; set; }
+
+        [Required]
+        [Display(Name = "startdate")]
+        public DateTime startdate { get; set; }
+
+        
+        [Display(Name = "enddate")]
+        public DateTime? enddate { get; set; }
+
+        [Display(Name = "isfinalized")]
+        public string isfinalized { get; set; }
+    }
+}
+-------------------DataModel/DbContext.cs----------------------------
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using TMIS_API.Authentication;
+using TMIS_API.DataModel;
+
+namespace TMIS_API.DataModel
+{
+    public partial class MariaDbContext : IdentityDbContext<ApplicationUser>
+    {
+        public MariaDbContext(DbContextOptions<MariaDbContext> options)
+       : base(options)
+        {
+        }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+        }
+
+        public virtual DbSet<ContractorModel> mascontractor { get; set; }
+        public virtual DbSet<VhicleTypeModel> masVhicleType { get; set; }
+        public virtual DbSet<WarehouseModel> maswarehouses { get; set; }
+        public virtual DbSet<TMIS_API.DataModel.mastender> mastender { get; set; }
+        public virtual DbSet<MasRCModel> masrc { get; set; }
+
+
+    }
+}
+
+------------------------------Service/IMasRCService.cs---------------------
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TMIS_API.DataModel;
+using TMIS_API.DTO;
+
+namespace TMIS_API.Service
+{
+    public interface IMasRCService
+    {
+        public Task<IEnumerable<MasRCModel>> FindAll();
+        public Task<int> Insert(MasRCModel masRC);
+        public Task<int> Delete(int id);
+        public Task<MasRCModel> FindOne(int id);
+        public Task<int> Update(MasRCModel masRC);
+        public Task<IEnumerable<RCDto>> FindAllUsingDTO();
+    }
+}
+
+------------------------------Service/IMasRCService.cs---------------------
+
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TMIS_API.DataModel;
+using TMIS_API.DTO;
+
+namespace TMIS_API.Service
+{
+    public class MasRCService : IMasRCService
+    {
+        private readonly MariaDbContext _dbContext;
+
+        public MasRCService(MariaDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+
+
+        public async Task<int> Delete(int id)
+        {
+            try
+            {
+                _dbContext.masrc.Remove(
+                    new MasRCModel
+                    {
+                        rcId = id
+                    }
+                );
+
+                return await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<IEnumerable<MasRCModel>> FindAll()
+        {
+            return await _dbContext.masrc.ToListAsync();
+        }
+
+        public async Task<IEnumerable<RCDto>> FindAllUsingDTO()
+        {
+            var RCList = await (from r in _dbContext.masrc
+                                join t in _dbContext.mastender on r.tenderId equals t.tenderid
+                                join vt in _dbContext.masVhicleType on r.vtypeId equals vt.vtypeid
+                                select new RCDto()
+                                {
+                                    rcId = r.rcId,
+                                    tenderId = r.tenderId,
+                                    tendername = t.tendername,
+                                    vtypeId = r.vtypeId,
+                                    vtypename = vt.vtypename,
+                                    basePrice = r.basePrice,
+                                    GST = r.GST,
+                                    finalRateWithGST = r.finalRateWithGST,
+                                    RCstartDate = r.RCstartDate,
+                                    RCEndDate = r.RCEndDate
+                                }).ToListAsync();
+
+            return RCList;
+        }
+
+        public async Task<MasRCModel> FindOne(int id)
+        {
+            return await _dbContext.masrc.FirstOrDefaultAsync(x => x.rcId == id);
+        }
+
+        public async Task<int> Insert(MasRCModel masRC)
+        {
+            _dbContext.Add(masRC);
+            return await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<int> Update(MasRCModel masRC)
+        {
+            try
+            {
+                _dbContext.Update(masRC);
+                return await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return 0;
+            }
+        }
+    }
+}
+
+--------------------appsettings.json---------------------
+
+{
+  "ConnectionStrings": {
+    "MariaDbConnectionString": "server=130.61.47.52;user id=Kaushal;password=cgmsc;database=tmis"
+  },
+
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+
+  "JWT": {
+    "ValidAudience": "http://localhost:4200",
+    "ValidIssuer": "https://localhost:44322/",
+    "Secret": "ByYM000OLlMQG6VVVp1OH7Xzyr7gHuw1qvUC5dcGt3SNM"
+  }
+ 
+}
+
+
+
+--------------------------Startup.cs------------------------------------
+
+ public void ConfigureServices(IServiceCollection services)
+        {
+
+            // For Entity Framework  
+            services.AddDbContext<MariaDbContext>(
+                options => options.UseMySql(
+                     Configuration.GetConnectionString("MariaDbConnectionString"),
+                new MySqlServerVersion(new Version(8, 0, 21))
+        )
+...
+...
+...
+
+ services.AddScoped<IMasContractorService, MasContractorService>();
+            services.AddScoped<IMasVhicleTypeService, MasVhicleTypeService>();
+            services.AddScoped<IWarehouseService, WarehouseService>();
+            services.AddScoped<IMasRCService, MasRCService>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(
+                    name: "AllowOrigin",
+                    builder => {
+                        builder.AllowAnyOrigin()
+                                .AllowAnyMethod()
+                                .AllowAnyHeader();
+                    });
+            });
+
+.....
+.....
+.....
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "TMIS_API v1"));
+            }
+           
+            app.UseHttpsRedirection();
+
+            app.UseRouting();
+            //app.UseCors();
+            app.UseCors("AllowOrigin");
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+        }
+...
+...
+
+
+------------------------Controllers/RCController.cs---------------------------
+
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TMIS_API.DataModel;
+using TMIS_API.DTO;
+
+namespace TMIS_API.Service
+{
+    public class MasRCService : IMasRCService
+    {
+        private readonly MariaDbContext _dbContext;
+
+        public MasRCService(MariaDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
+
+
+        public async Task<int> Delete(int id)
+        {
+            try
+            {
+                _dbContext.masrc.Remove(
+                    new MasRCModel
+                    {
+                        rcId = id
+                    }
+                );
+
+                return await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<IEnumerable<MasRCModel>> FindAll()
+        {
+            return await _dbContext.masrc.ToListAsync();
+        }
+
+        public async Task<IEnumerable<RCDto>> FindAllUsingDTO()
+        {
+            var RCList = await (from r in _dbContext.masrc
+                                join t in _dbContext.mastender on r.tenderId equals t.tenderid
+                                join vt in _dbContext.masVhicleType on r.vtypeId equals vt.vtypeid
+                                select new RCDto()
+                                {
+                                    rcId = r.rcId,
+                                    tenderId = r.tenderId,
+                                    tendername = t.tendername,
+                                    vtypeId = r.vtypeId,
+                                    vtypename = vt.vtypename,
+                                    basePrice = r.basePrice,
+                                    GST = r.GST,
+                                    finalRateWithGST = r.finalRateWithGST,
+                                    RCstartDate = r.RCstartDate,
+                                    RCEndDate = r.RCEndDate
+                                }).ToListAsync();
+
+            return RCList;
+        }
+
+        public async Task<MasRCModel> FindOne(int id)
+        {
+            return await _dbContext.masrc.FirstOrDefaultAsync(x => x.rcId == id);
+        }
+
+        public async Task<int> Insert(MasRCModel masRC)
+        {
+            _dbContext.Add(masRC);
+            return await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task<int> Update(MasRCModel masRC)
+        {
+            try
+            {
+                _dbContext.Update(masRC);
+                return await _dbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return 0;
+            }
+        }
+    }
+}
+
+
+

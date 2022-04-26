@@ -1,0 +1,13 @@
+ <div class="form-group">
+            <label for="rcEndDate" class="form-label fw-bold">RC End Date</label>
+            <input formControlName="rcEndDate" id="rcEndDate" type="date" class="form-control" />
+            <div *ngIf="f['rcEndDate'].touched && f['rcEndDate'].invalid" class="alert alert-danger">
+              <div *ngIf="f['rcEndDate'].errors && f['rcEndDate'].errors['required']">
+                End Date is required.
+              </div>
+            </div>
+          </div>
+
+...
+...
+ <button class="btn btn-primary mt-2" type="submit" [disabled]="!form.valid" >

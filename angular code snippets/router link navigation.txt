@@ -1,0 +1,5 @@
+<a href="#" routerLink="/rc/rcindex" class="btn btn-primary btn-sm">Back</a>
+
+-------------------
+
+this.router.navigateByUrl('/rc/rcindex');

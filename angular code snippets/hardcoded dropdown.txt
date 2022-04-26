@@ -1,0 +1,24 @@
+...
+          <div class="form-group">
+            <label for="gst" class="form-label fw-bold">GST</label>
+            <select formControlName="gst" class="form-select" name="gst">
+              <option disabled>-Select GST-</option>
+              <option *ngFor="let gst of gstList" [value]="gst">
+                {{ gst }}
+              </option>
+            </select>
+            <!-- error block -->
+            <div *ngIf="f['gst'].touched && f['gst'].invalid" class="alert alert-danger">
+              <div *ngIf="f['gst'].errors && f['gst'].errors['required']" class="small">
+                Vhicle is Required.
+              </div>
+            </div>
+          </div>
+....
+
+-----------------------------
+...
+gstList = [0, 5, 12, 18, 28];
+
+  constructor(
+....
