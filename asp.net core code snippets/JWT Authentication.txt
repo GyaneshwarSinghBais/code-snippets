@@ -1,0 +1,252 @@
+--------------TMIS_API.csporj (what nugetpackage you have to install)---------------
+
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\AuthenticateController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.16" />
+    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="5.0.16" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.16" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.16">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.17.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="5.0.2" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="5.0.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.17.0" />
+  </ItemGroup>
+
+</Project>
+
+------------------appsettings.json-------------------------
+
+{
+  "ConnectionStrings": {
+    "MariaDbConnectionString": "server=130.61.47.52;user id=Kaushal;password=cgmsc;database=tmis"
+  },
+
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+
+  "JWT": {
+    "ValidAudience": "http://localhost:4200",
+    "ValidIssuer": "https://localhost:44322/",
+    "Secret": "ByYM000OLlMQG6VVVp1OH7Xzyr7gHuw1qvUC5dcGt3SNM"
+  }
+ 
+}
+
+------------------------Startup.cs-------------------
+....
+...
+    public void ConfigureServices(IServiceCollection services)
+    {
+...
+...
+
+            // Adding Authentication  
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+
+            // Adding Jwt Bearer  
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    //ValidateIssuer = true,
+                    //ValidateAudience = true,
+                    //ValidAudience = Configuration["JWT:ValidAudience"],
+                    //ValidIssuer = Configuration["JWT:ValidIssuer"],
+                    //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
+
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration["JWT:Secret"]))
+                };
+            });
+
+            services.AddScoped<IMasContractorService, MasContractorService>();
+...
+...
+services.AddControllers();
+services.AddSingleton<IJwtAuth>(new Auth(Configuration["JWT:Secret"]));
+...
+...
+   app.UseAuthentication();
+   app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+...
+...
+
+
+------------------Service/IJwtAuth.cs---------------------------------
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace TMIS_API.Service
+{
+    public interface IJwtAuth
+    {
+        string Authentication(string username);
+    }
+}
+
+
+--------------Servie/Auth.cs----------------------------
+
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace TMIS_API.Service
+{
+    public class Auth : IJwtAuth
+    {
+       
+        private readonly string key;
+        public Auth(string key)
+        {
+            this.key = key;
+        }    
+
+        public string Authentication(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return null;
+            }
+
+            // 1. Create Security Token Handler
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            // 2. Create Private Key to Encrypted
+            var tokenKey = Encoding.ASCII.GetBytes(key);
+
+            //3. Create JETdescriptor
+            var tokenDescriptor = new SecurityTokenDescriptor()
+            {
+                Subject = new ClaimsIdentity(
+                    new Claim[]
+                    {
+                        new Claim(ClaimTypes.Name, username)
+                    }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+            };
+            //4. Create Token
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            // 5. Return Token from method
+            return tokenHandler.WriteToken(token);
+        }
+    }
+}
+
+-------------------------------UserController.cs--------------------------------------------
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using TMIS_API.DataModel;
+using TMIS_API.Service;
+
+namespace TMIS_API.Controllers
+{
+    [Authorize]
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UserController : ControllerBase
+    {
+        private readonly IJwtAuth jwtAuth;
+        private readonly MariaDbContext _dbContext;
+
+        private readonly List<Member> lstMember = new List<Member>()
+        {
+            new Member{Id=1, Name="Kirtesh" },
+            new Member {Id=2, Name="Nitya" },
+            new Member{Id=3, Name="pankaj"}
+        };
+        public UserController(IJwtAuth jwtAuth, MariaDbContext dbContext)
+        {
+            this.jwtAuth = jwtAuth;
+            _dbContext = dbContext;
+        }
+        // GET: api/<MembersController>
+        [HttpGet]
+        public IEnumerable<Member> AllMembers()
+        {
+            return lstMember;
+        }
+
+        // GET api/<MembersController>/5
+        [HttpGet("{id}")]
+        public Member MemberByid(int id)
+        {
+            return lstMember.Find(x => x.Id == id);
+        }
+
+        [AllowAnonymous]
+        // POST api/<MembersController>
+        [HttpPost("authentication")]
+        public async Task<IActionResult> Authentication([FromBody] UserCredential userCredential)
+        {
+            var RCList = await (from usr in _dbContext.users
+                                where (usr.UserName == userCredential.UserName && usr.Pwd == userCredential.Password)   
+                               select usr.id                               
+                               ).ToListAsync();
+
+            if(RCList.Count == 0)
+            {
+                return Unauthorized("Credentials Mismatch or Wrong");
+            }
+
+            var token = jwtAuth.Authentication(userCredential.UserName);
+            if (token == null)
+                return Unauthorized("Problem in token generation");
+            return Ok(token);
+        }
+    }
+}
+
