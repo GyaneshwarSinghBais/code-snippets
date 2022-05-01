@@ -1,0 +1,95 @@
+--------------app-routing.module.ts ----------------------
+
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
+import { BalanceComponent } from './balance/balance.component';
+import { DepositComponent } from './deposit/deposit.component';
+import { DepositaComponent } from './deposita/deposita.component';
+import { DepositbComponent } from './depositb/depositb.component';
+import { WithdrawComponent } from './withdraw/withdraw.component';
+
+const routes: Routes = [
+  {
+    path:'balance', component: BalanceComponent
+  },{
+    path:'deposit', 
+    component: DepositComponent,
+    children: [
+      {
+        path:'coins', component: DepositaComponent
+      },
+      {
+        path:'notes', component: DepositbComponent
+      }
+    ]
+  },{
+    path:'withdraw', component:WithdrawComponent
+  }
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+export const ArrayOfComponents = [BalanceComponent, 
+  DepositComponent, WithdrawComponent,
+  DepositaComponent,DepositbComponent]
+
+-------------------------deposite.component.ts--------
+
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router} from '@angular/router'
+
+@Component({
+  selector: 'app-deposit',
+  template: `
+    <div>
+      <button (click)='coins()'>Deposit Coins</button>
+      <button (click)='notes()'>Deposit notes</button>
+      <p>
+      <router-outlet></router-outlet>
+      </p>
+    </div>
+  `,
+styles: ['button {top: 50%; text-align: center;border-radius: 15px; border: 2px solid #73AD21; width: fit-content; margin: 20px; padding: 20px;}']
+})
+export class DepositComponent implements OnInit {
+
+  constructor(private route: ActivatedRoute, private router: Router) { }
+
+  ngOnInit(): void {
+  }
+
+  coins(){
+    this.router.navigate(['coins'], {relativeTo:this.route});
+  }
+
+  notes(){
+    this.router.navigate(['notes'], {relativeTo:this.route});
+  }
+
+}
+
+-----------------------------------------
+We used a simple OnClick function to ask the router to change the URL to “/deposit/notes” when we click on notes and the similar behavior when we click on coins.
+
+---------------------another snippet-----------
+const routes = [
+  { 
+    path: '', 
+    component: Group1Component // contains header1, footer1 and router-outlet
+    children: [
+      { path: '', component: InicioComponent },
+      { path: 'queHacemos', component: QueHacemosComponent },
+      { path: 'contacto', component: ContactoComponent }
+    ]
+  },
+  { 
+    path: '', 
+    component: Group2Component // contains header2, footer2 and router-outlet
+    children: [
+      { path: 'queHacemosAdmin', component: QueHacemosAdminComponent }
+    ]
+  }
+];

@@ -118,7 +118,7 @@ namespace TMIS_API.Service
 {
     public interface IJwtAuth
     {
-        string Authentication(string username);
+        string Authentication(string username,string role);
     }
 }
 
@@ -145,7 +145,7 @@ namespace TMIS_API.Service
             this.key = key;
         }    
 
-        public string Authentication(string username)
+        public string Authentication(string username,string role)
         {
             if (string.IsNullOrEmpty(username))
             {
@@ -164,7 +164,8 @@ namespace TMIS_API.Service
                 Subject = new ClaimsIdentity(
                     new Claim[]
                     {
-                        new Claim(ClaimTypes.Name, username)
+                        new Claim(ClaimTypes.Name, username),
+                        new Claim(ClaimTypes.Role, role)
                     }),
                 Expires = DateTime.UtcNow.AddHours(1),
                 SigningCredentials = new SigningCredentials(
@@ -178,6 +179,7 @@ namespace TMIS_API.Service
         }
     }
 }
+
 
 -------------------------------UserController.cs--------------------------------------------
 
@@ -233,20 +235,28 @@ namespace TMIS_API.Controllers
         public async Task<IActionResult> Authentication([FromBody] UserCredential userCredential)
         {
             var RCList = await (from usr in _dbContext.users
-                                where (usr.UserName == userCredential.UserName && usr.Pwd == userCredential.Password)   
-                               select usr.id                               
-                               ).ToListAsync();
+                                where (usr.UserName == userCredential.UserName && usr.Pwd == userCredential.Password)
+                                select new UsersModel()
+                                {
+                                    id = usr.id,                                   
+                                    OfficeFlag = usr.OfficeFlag
+                                }).ToListAsync();
 
-            if(RCList.Count == 0)
+            if (RCList.Count == 0)
             {
                 return Unauthorized("Credentials Mismatch or Wrong");
             }
 
-            var token = jwtAuth.Authentication(userCredential.UserName);
+            var user = RCList.FirstOrDefault();
+            var role = user.OfficeFlag;
+            var token = jwtAuth.Authentication(userCredential.UserName, role);
+
             if (token == null)
-                return Unauthorized("Problem in token generation");
+                return Unauthorized("Problem in token generation");        
+
             return Ok(token);
         }
     }
 }
+
 

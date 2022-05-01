@@ -1,0 +1,316 @@
+-----------------authentication.services.ts------------
+
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthenticationService {
+
+  private apiURL = "https://localhost:44322/api";
+
+  httpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    })
+  }
+
+  constructor(private httpClient: HttpClient) { }
+
+  doLogin(data:any): Observable<any> {
+
+    return this.httpClient.post(this.apiURL + '/User/authentication/',JSON.stringify(data),this.httpOptions)
+    .pipe(
+      catchError(this.errorHandler)
+    )
+  }
+
+
+  IsLoggedIn(){
+    return localStorage.getItem('token')!=null;
+  }
+
+  GetToken(){
+    return localStorage.getItem('token')||'';
+  }
+
+  HaveAccess(){
+    var loggintoken = localStorage.getItem('token')||'';
+    var _extractedtoken = loggintoken.split('.')[1];
+    var _atobdata = atob(_extractedtoken);
+    var finaldata = JSON.parse(_atobdata);
+    if(finaldata.role == 'AD'){    //admin
+      return true;
+    }
+   alert('You not having access');
+   return false;
+  }
+
+
+  errorHandler(error:any) {
+    let errorMessage = '';
+    if(error.error instanceof ErrorEvent) {
+      errorMessage = error.error.message;
+    } else {
+      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+    }
+    return throwError(errorMessage);
+ }
+}
+
+
+---------------------login.component.html--------------------
+
+<!-- <app-navbar></app-navbar> -->
+
+<div class="container">
+  <router-outlet></router-outlet>
+</div>
+
+<div class="container mt-5 bg-info">
+  <div class="text-center mb-2 mt-2">
+    <h2>Transport Management Information System</h2>
+  </div>
+  <!-- Section: Design Block -->
+  <section class=" text-center text-lg-start">
+
+    <div class="card mb-3">
+      <div class="row g-0 d-flex align-items-center">
+        <div class="col-lg-4 d-none d-lg-flex">
+          <!-- <img src="https://mdbootstrap.com/img/new/ecommerce/vertical/004.jpg" alt="Trendy Pants and Shoes"
+          class="w-100 rounded-t-5 rounded-tr-lg-0 rounded-bl-lg-5" /> -->
+          <img src="../assets/images/transport.jpeg" alt="Trendy Pants and Shoes"
+            class="w-100 rounded-t-5 rounded-tr-lg-0 rounded-bl-lg-5" height="450px" width="300x" />
+        </div>
+        <div class="col-lg-8">
+          <div class="card-body py-5 px-md-5">
+
+            <form [formGroup]="form" (ngSubmit)="onClickSubmit()" novalidate>
+              <!-- Email input -->
+              <div class="form-outline mb-4">
+                <input type="text" id="userName" class="form-control" formControlName="userName" />
+                <label class="form-label" for="id">User Name/Id</label>
+              </div>
+
+              <!-- Password input -->
+              <div class="form-outline mb-4">
+                <input type="password" id="password" class="form-control" formControlName="password" />
+                <label class="form-label" for="password">Password</label>
+              </div>
+
+              <!-- Submit button -->
+              <button type="submit" class="btn btn-primary btn-block mb-4" value="submit">Sign in</button>
+
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Section: Design Block -->
+  <div class="text-center mb-2 mt-2">
+    <small>Chhattisgarh Medical Services Corporation Limited</small>
+  </div>
+</div>
+
+-------------------------login.component.ts-------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import {
+  FormGroup,
+  FormControl,
+  FormBuilder,
+  Validators,
+  FormArray,FormsModule,ReactiveFormsModule
+} from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { AuthenticationService } from '../services/authentication.service';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
+})
+export class LoginComponent implements OnInit {
+
+  public form!: FormGroup;
+  responsedata : any;
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private activeRoute: ActivatedRoute,
+    private apiService: AuthenticationService
+  ) {}
+
+  ngOnInit(): void {
+    this.doLogin();
+  }
+
+  doLogin() {
+    this.form = this.fb.group({
+      userName: ['', [Validators.required, Validators.minLength(2)]],
+      password: ['', [Validators.required]],
+    });
+  }
+
+  get f() {
+    return this.form.controls;
+  }
+
+  get userName() {
+    return this.form.get('userName');
+  }
+  get password() {
+    return this.form.get('password');
+  }
+
+  onClickSubmit() {
+    if(this.form.valid){
+      this.apiService.doLogin(this.form.value).subscribe((result:any)=>{
+        if(result!=null){
+          this.responsedata = result;
+          localStorage.setItem('token',this.responsedata)
+          this.router.navigate(['../adminHome']);
+        }
+      },(error)=>{
+        alert('You have entered wrong credentials')
+      })
+    }
+  }
+
+}
+
+
+-------------------------auth.gaurd.ts------------------
+
+import { Injectable } from '@angular/core';
+import {
+  ActivatedRouteSnapshot,
+  CanActivate,
+  Router,
+  RouterStateSnapshot,
+  UrlTree,
+} from '@angular/router';
+import { Observable } from 'rxjs';
+import { AuthenticationService } from '../services/authentication.service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthGuard implements CanActivate {
+  constructor(
+    private service: AuthenticationService,
+    private route: Router
+    ) {}
+
+  canActivate() {
+    if (this.service.IsLoggedIn()) {
+      return true;
+    } else {
+      this.route.navigate(["\login"])
+      return false;
+    }
+  }
+}
+
+------------------role.gaurd.ts------------------------
+
+import { Injectable } from '@angular/core';
+import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
+import { Observable } from 'rxjs';
+import { AuthenticationService } from '../services/authentication.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RoleGuard implements CanActivate {
+
+  constructor(private service:AuthenticationService, private route:Router){
+
+  }
+
+  canActivate() {
+    if(this.service.HaveAccess()){
+      return true;
+    }else{
+      this.route.navigate(['/adminHome']);
+      return false;
+    }
+
+  }
+
+}
+
+--------------------------app.module.ts------------------
+...
+...
+import {HttpClientModule, HTTP_INTERCEPTORS} from '@angular/common/http';
+...
+...
+  providers: [{provide:HTTP_INTERCEPTORS,useClass:TokenInterceptorService,multi:true}],
+...
+...
+
+-----------------------admin-routing.module.ts------------------------
+
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { ShowContractorComponent } from '../Contractor/show-contractor/show-contractor.component';
+import { ShowVhicleTypeComponent } from '../Contractor/show-vhicle-type/show-vhicle-type.component';
+import { AuthGuard } from '../shared/auth.guard';
+import { RoleGuard } from '../shared/role.guard';
+import { AddContractorComponent } from './add-contractor/add-contractor.component';
+import { AdminHomeComponent } from './admin-home/admin-home.component';
+import { ContractorEntryComponent } from './contractor-entry/contractor-entry.component';
+import { ContractoreditComponent } from './contractor/contractoredit/contractoredit.component';
+import { ContractorindexComponent } from './contractor/contractorindex/contractorindex.component';
+import { ContractorviewComponent } from './contractor/contractorview/contractorview.component';
+import { RccreateComponent } from './rc/rccreate/rccreate.component';
+import { RceditComponent } from './rc/rcedit/rcedit.component';
+import { RcindexComponent } from './rc/rcindex/rcindex.component';
+import { RcviewComponent } from './rc/rcview/rcview.component';
+import { TendercreateComponent } from './tender/tendercreate/tendercreate.component';
+import { TendereditComponent } from './tender/tenderedit/tenderedit.component';
+import { TenderindexComponent } from './tender/tenderindex/tenderindex.component';
+import { TenderviewComponent } from './tender/tenderview/tenderview.component';
+import { VhiclecreateComponent } from './vhicle/vhiclecreate/vhiclecreate.component';
+import { VhicleeditComponent } from './vhicle/vhicleedit/vhicleedit.component';
+import { VhicleindexComponent } from './vhicle/vhicleindex/vhicleindex.component';
+import { VhicleviewComponent } from './vhicle/vhicleview/vhicleview.component';
+
+const routes: Routes = [
+  {path : 'VhicleType', component : ShowVhicleTypeComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'contractor', component : ShowContractorComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'contractorEntry', component : ContractorEntryComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'addContractor', component : AddContractorComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'adminHome', component : AdminHomeComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'vhicle/vhicleindex', component : VhicleindexComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'vhicle/:vtypeid/vhicleview', component : VhicleviewComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'vhicle/vhiclecreate', component : VhiclecreateComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'vhicle/:vtypeid/vhicleedit', component : VhicleeditComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'tender/tenderindex', component : TenderindexComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'tender/:tenderid/tenderview', component : TenderviewComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'tender/tendercreate', component : TendercreateComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'tender/:tenderid/tenderedit', component : TendereditComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'contractor/contractorindex', component : ContractorindexComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'contractor/:contractorid/contractoredit', component : ContractoreditComponent
+  ,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'contractor/:contractorid/contractorview', component : ContractorviewComponent
+  ,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'rc/rcindex', component : RcindexComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'rc/:rcid/rcview', component : RcviewComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'rc/rccreate', component : RccreateComponent,canActivate:[AuthGuard,RoleGuard]},
+  {path : 'rc/:rcid/rcedit', component : RceditComponent,canActivate:[AuthGuard,RoleGuard]}
+];
+
+@NgModule({
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule]
+})
+export class AdminRoutingModule { }

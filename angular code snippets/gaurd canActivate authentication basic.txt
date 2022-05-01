@@ -1,0 +1,217 @@
+ng g guard shared/auth
+
+
+-----------------authentication.service.ts----------------------
+
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthenticationService {
+
+  private apiURL = "https://localhost:44322/api";
+
+  httpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    })
+  }
+
+  constructor(private httpClient: HttpClient) { }
+
+  doLogin(data:any): Observable<any> {
+
+    return this.httpClient.post(this.apiURL + '/User/authentication/',JSON.stringify(data),this.httpOptions)
+    .pipe(
+      catchError(this.errorHandler)
+    )
+  }
+
+
+  IsLoggedIn(){
+    return localStorage.getItem('token')!=null;
+  }
+
+
+
+
+  errorHandler(error:any) {
+    let errorMessage = '';
+    if(error.error instanceof ErrorEvent) {
+      errorMessage = error.error.message;
+    } else {
+      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+    }
+    return throwError(errorMessage);
+ }
+}
+
+--------------------login.component.html---------------
+
+<!-- <app-navbar></app-navbar> -->
+
+<div class="container">
+  <router-outlet></router-outlet>
+</div>
+
+<div class="container mt-5 bg-info">
+  <div class="text-center mb-2 mt-2">
+    <h2>Transport Management Information System</h2>
+  </div>
+  <!-- Section: Design Block -->
+  <section class=" text-center text-lg-start">
+
+    <div class="card mb-3">
+      <div class="row g-0 d-flex align-items-center">
+        <div class="col-lg-4 d-none d-lg-flex">
+          <!-- <img src="https://mdbootstrap.com/img/new/ecommerce/vertical/004.jpg" alt="Trendy Pants and Shoes"
+          class="w-100 rounded-t-5 rounded-tr-lg-0 rounded-bl-lg-5" /> -->
+          <img src="../assets/images/transport.jpeg" alt="Trendy Pants and Shoes"
+            class="w-100 rounded-t-5 rounded-tr-lg-0 rounded-bl-lg-5" height="450px" width="300x" />
+        </div>
+        <div class="col-lg-8">
+          <div class="card-body py-5 px-md-5">
+
+            <form [formGroup]="form" (ngSubmit)="onClickSubmit()" novalidate>
+              <!-- Email input -->
+              <div class="form-outline mb-4">
+                <input type="text" id="userName" class="form-control" formControlName="userName" />
+                <label class="form-label" for="id">User Name/Id</label>
+              </div>
+
+              <!-- Password input -->
+              <div class="form-outline mb-4">
+                <input type="password" id="password" class="form-control" formControlName="password" />
+                <label class="form-label" for="password">Password</label>
+              </div>
+
+              <!-- Submit button -->
+              <button type="submit" class="btn btn-primary btn-block mb-4" value="submit">Sign in</button>
+
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Section: Design Block -->
+  <div class="text-center mb-2 mt-2">
+    <small>Chhattisgarh Medical Services Corporation Limited</small>
+  </div>
+</div>
+
+
+----------------------login.component.ts----------------
+
+import { Component, OnInit } from '@angular/core';
+import {
+  FormGroup,
+  FormControl,
+  FormBuilder,
+  Validators,
+  FormArray,FormsModule,ReactiveFormsModule
+} from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { AuthenticationService } from '../services/authentication.service';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css'],
+})
+export class LoginComponent implements OnInit {
+
+  public form!: FormGroup;
+  responsedata : any;
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private activeRoute: ActivatedRoute,
+    private apiService: AuthenticationService
+  ) {}
+
+  ngOnInit(): void {
+    this.doLogin();
+  }
+
+  doLogin() {
+    this.form = this.fb.group({
+      userName: ['', [Validators.required, Validators.minLength(2)]],
+      password: ['', [Validators.required]],
+    });
+  }
+
+  get f() {
+    return this.form.controls;
+  }
+
+  get userName() {
+    return this.form.get('userName');
+  }
+  get password() {
+    return this.form.get('password');
+  }
+
+  onClickSubmit() {
+    if(this.form.valid){
+      this.apiService.doLogin(this.form.value).subscribe((result:any)=>{
+        if(result!=null){
+          this.responsedata = result;
+          localStorage.setItem('token',this.responsedata)
+          this.router.navigate(['../adminHome']);
+        }
+      },(error)=>{
+        alert('You have entered wrong credentials')
+      })
+    }
+  }
+
+}
+
+-----------------------auth.guard.ts--------------
+
+import { Injectable } from '@angular/core';
+import {
+  ActivatedRouteSnapshot,
+  CanActivate,
+  Router,
+  RouterStateSnapshot,
+  UrlTree,
+} from '@angular/router';
+import { Observable } from 'rxjs';
+import { AuthenticationService } from '../services/authentication.service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthGuard implements CanActivate {
+  constructor(
+    private service: AuthenticationService,
+    private route: Router
+    ) {}
+
+  canActivate() {
+    if (this.service.IsLoggedIn()) {
+      return true;
+    } else {
+      this.route.navigate(["\login"])
+      return false;
+    }
+  }
+}
+
+-------------------------------admin-routing.module.ts----------------
+...
+...
+  {path : 'rc/rccreate', component : RccreateComponent,canActivate:[AuthGuard]},
+  {path : 'rc/:rcid/rcedit', component : RceditComponent,canActivate:[AuthGuard]}
+];
+...
+...
