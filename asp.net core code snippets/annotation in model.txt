@@ -1,0 +1,39 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace TMIS_API.DataModel
+{
+    public class MasRCModel
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int? rcId { get; set; }
+
+        [Required]
+        [Display(Name = "tenderId")]
+        public int? tenderId { get; set; }
+
+       
+        [Display(Name = "vtypeId")]
+        public int? vtypeId { get; set; }
+
+        [Display(Name = "basePrice")]
+        public double? basePrice { get; set; }
+
+        [Display(Name = "GST")]
+        public int? GST { get; set; }
+
+        [Display(Name = "finalRateWithGST")]
+        public double? finalRateWithGST { get; set; }
+
+        [Display(Name = "RCstartDate")]
+        public DateTime? RCstartDate { get; set; }
+
+        [Display(Name = "RCEndDate")]
+        public DateTime? RCEndDate { get; set; }
+    }
+}
